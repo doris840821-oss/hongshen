@@ -617,7 +617,7 @@ ${L.length===0?'<div class="empty">沒有記錄</div>':L.map(r=>{
   </div>
   ${(r.payments||[]).length?`<div style="margin-top:10px;padding-top:8px;border-top:0.5px solid var(--bd)">
     <div style="font-size:11px;color:var(--tx3);margin-bottom:5px;font-weight:500">收款記錄</div>
-    ${r.payments.map(p=>'<div class="pr"><span class="pr-date">'+fd(p.date)+'</span><span class="pr-amt">+'+fmt(p.amount)+'</span>'+(p.note?'<span style="font-size:11px;color:var(--tx3)">'+p.note+'</span>':'')+'</div>').join('')}
+    ${r.payments.map((p,pi)=>'<div class="pr"><span class="pr-date">'+fd(p.date)+'</span><span class="pr-amt">+'+fmt(p.amount)+'</span>'+(p.note?'<span style="font-size:11px;color:var(--tx3)">'+p.note+'</span>':'')+(isAuth?'<button class="eb del" onclick="delPay('+r.id+','+pi+')">✕</button>':'')+'</div>').join('')}
   </div>`:''}
   ${r.note?'<div class="note-box">'+r.note+'</div>':''}
   ${isAuth?'<button class="add-pay-btn" onclick="addPay('+r.id+')">+ 新增收款記錄</button>':''}
@@ -816,16 +816,50 @@ function oCO(e=null){
 
 // ── ADD PAYMENT ──
 function addPay(arId){
+  const r=ARS.find(x=>x.id===arId);if(!r)return;
   mo('新增收款記錄',`
 <div class="fg"><label>收款日期</label><input id="pd" type="date" value="${today()}"></div>
 <div class="fg"><label>收款金額 ($)</label><input id="pa" type="number"></div>
-<div class="fg"><label>備註</label><input id="pn" type="text" placeholder="例：現金、支票、匯款"></div>`,
+<div class="fg"><label>備註</label><input id="pn" type="text" placeholder="例：現金、支票、匯款"></div>
+<div style="font-size:11px;color:var(--tx3);margin-top:4px">※ 此筆收款也會自動同步新增至收支明細</div>`,
   async()=>{
-    const r=ARS.find(x=>x.id===arId);if(!r)return;
-    const payments=[...(r.payments||[]),{date:g('pd'),amount:parseFloat(g('pa'))||0,note:g('pn')}];
+    const amt=parseFloat(g('pa'))||0;
+    const dt=g('pd');
+    const note=g('pn');
+    // 先新增收支明細，取得 id 後存入 payment
+    const txId='ar_'+arId+'_'+Date.now();
+    const txRes=await db('transactions','POST',{
+      type:'收到款項',date:dt,
+      source:r.client,
+      amount:amt,direction:'收入',
+      status:'已匯款',
+      invoice:r.invoice||'',
+      note:'[AR:'+txId+'] 應收款項收款'+(note?' - '+note:'')
+    });
+    const txDbId=txRes&&txRes[0]?txRes[0].id:null;
+    // 新增到應收款項收款記錄，帶 txId 和 txDbId 供連動刪除
+    const payments=[...(r.payments||[]),{date:dt,amount:amt,note,txId,txDbId}];
     await db('receivables','PATCH',{payments},'?id=eq.'+arId);
-    await loadAll();toast('已新增收款記錄');
+    await loadAll();toast('已新增收款記錄，已同步至收支明細');
   });
+}
+
+// ── DELETE PAYMENT ──
+async function delPay(arId,idx){
+  if(!confirm('確定刪除這筆收款記錄？
+收支明細內對應的收入也會一併刪除'))return;
+  const r=ARS.find(x=>x.id===arId);if(!r)return;
+  const pay=(r.payments||[])[idx];
+  // 連動刪除收支明細
+  if(pay&&pay.txDbId){
+    await db('transactions','DELETE',null,'?id=eq.'+pay.txDbId);
+  } else if(pay&&pay.txId){
+    // 舊資料用 note 比對刪除
+    await db('transactions','DELETE',null,'?note=like.*[AR:'+pay.txId+']*');
+  }
+  const payments=(r.payments||[]).filter((_,i)=>i!==idx);
+  await db('receivables','PATCH',{payments},'?id=eq.'+arId);
+  await loadAll();toast('已刪除收款記錄，收支明細已同步');
 }
 
 // ── DELETE OIL ──
