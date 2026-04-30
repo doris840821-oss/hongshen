@@ -846,8 +846,7 @@ function addPay(arId){
 
 // ── DELETE PAYMENT ──
 async function delPay(arId,idx){
-  if(!confirm('確定刪除這筆收款記錄？
-收支明細內對應的收入也會一併刪除'))return;
+  if(!confirm('確定刪除這筆收款記錄？收支明細內對應的收入也會一併刪除'))return;
   const r=ARS.find(x=>x.id===arId);if(!r)return;
   const pay=(r.payments||[])[idx];
   // 連動刪除收支明細
