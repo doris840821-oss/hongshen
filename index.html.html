@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>弘盛工程行 · 財務管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --green:#1D9E75;--green-dk:#0F6E56;--green-lt:#E1F5EE;
+  --red:#E24B4A;--red-lt:#FCEBEB;
+  --blue:#185FA5;--blue-lt:#E6F1FB;
+  --amber:#BA7517;--amber-lt:#FAEEDA;
+  --bg:#F4F3F0;--sur:#FFFFFF;--sur2:#F8F7F5;
+  --bd:rgba(0,0,0,0.08);--bd2:rgba(0,0,0,0.14);
+  --tx:#1A1A18;--tx2:#6B6B67;--tx3:#9B9B97;
+  --r:12px;--rs:8px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#141413;--sur:#1E1E1C;--sur2:#262624;
+  --bd:rgba(255,255,255,0.08);--bd2:rgba(255,255,255,0.14);
+  --tx:#F0EFE8;--tx2:#9B9B97;--tx3:#6B6B67;
+  --green-lt:#0F3028;--red-lt:#2E1515;--blue-lt:#0C1E33;--amber-lt:#2E1F08;
+}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans TC',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-box{background:var(--sur);border-radius:16px;border:0.5px solid var(--bd);padding:32px 24px;width:100%;max-width:360px}
+.login-logo{font-size:13px;color:var(--tx3);margin-bottom:4px}
+.login-title{font-size:22px;font-weight:700;margin-bottom:24px;letter-spacing:-.3px}
+.login-err{background:var(--red-lt);color:var(--red);font-size:13px;padding:10px 12px;border-radius:var(--rs);margin-bottom:14px;display:none}
+
+/* APP */
+.app{max-width:460px;margin:0 auto;min-height:100vh}
+.topbar{background:var(--sur);border-bottom:0.5px solid var(--bd);padding:12px 16px 10px;position:sticky;top:0;z-index:100}
+.topbar-co{font-size:11px;color:var(--tx3);letter-spacing:.5px}
+.topbar-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.topbar-title{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.export-top{background:none;border:0.5px solid var(--bd2);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--tx2);cursor:pointer;font-family:inherit}
+.logout-btn{background:none;border:none;font-size:12px;color:var(--tx3);cursor:pointer;font-family:inherit;padding:5px 8px}
+.readonly-badge{background:var(--amber-lt);color:var(--amber);font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px}
+.search-bar{display:flex;align-items:center;gap:8px;background:var(--sur2);border:0.5px solid var(--bd2);border-radius:var(--rs);padding:8px 12px}
+.search-bar input{flex:1;border:none;background:none;font-size:13px;color:var(--tx);font-family:inherit;outline:none}
+.search-bar input::placeholder{color:var(--tx3)}
+.search-bar .clear{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:14px;padding:0;line-height:1}
+.nav{display:flex;background:var(--sur);border-bottom:0.5px solid var(--bd);position:sticky;top:97px;z-index:99;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nb{flex:1;min-width:56px;padding:10px 2px 9px;font-size:11.5px;font-family:inherit;border:none;background:none;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.nb.on{color:var(--green);border-bottom-color:var(--green);font-weight:500}
+.content{padding:14px 12px 90px}
+.card{background:var(--sur);border-radius:var(--r);border:0.5px solid var(--bd);padding:14px;margin-bottom:10px}
+.ci{padding:10px 14px}
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.st{background:var(--sur2);border-radius:var(--rs);padding:11px 12px}
+.st .lb{font-size:10.5px;color:var(--tx3);margin-bottom:4px;letter-spacing:.3px}
+.st .vl{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.cg{color:var(--green)}.cr{color:var(--red)}.cb{color:var(--blue)}.ca{color:var(--amber)}
+.sec{font-size:11px;font-weight:700;color:var(--tx3);letter-spacing:1px;text-transform:uppercase;margin:16px 0 8px 2px}
+.tr{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--bd)}
+.tr:last-child{border-bottom:none}
+.ti-ico{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px;font-weight:700}
+.ti-ico.inc{background:var(--green-lt);color:var(--green)}
+.ti-ico.exp{background:var(--red-lt);color:var(--red)}
+.ti-info{flex:1;min-width:0}
+.ti-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ti-meta{font-size:11px;color:var(--tx3);margin-top:2px}
+.ti-right{text-align:right;flex-shrink:0}
+.amt{font-size:14px;font-weight:700;letter-spacing:-.3px}
+.amt.inc{color:var(--green)}.amt.exp{color:var(--red)}
+.bdg{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;margin-top:3px;font-weight:500}
+.bdg.done{background:var(--green-lt);color:var(--green-dk)}
+.bdg.wait{background:var(--amber-lt);color:var(--amber)}
+.bdg.tp{background:var(--blue-lt);color:var(--blue)}
+.bdg.topup{background:var(--green-lt);color:var(--green-dk)}
+.bdg.src{background:var(--sur2);color:var(--tx2);border:0.5px solid var(--bd2)}
+.pw{background:var(--bd);border-radius:20px;height:5px;overflow:hidden;margin-top:7px}
+.pf{height:5px;border-radius:20px;background:var(--green)}
+.pf.am{background:#EF9F27}
+.pl{display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);margin-top:3px}
+.oil-hdr{background:var(--green);border-radius:var(--r);padding:16px;color:white;margin-bottom:10px}
+.oil-hdr .lb{font-size:11px;opacity:.75;margin-bottom:4px}
+.oil-hdr .bal{font-size:28px;font-weight:700;letter-spacing:-.5px}
+.oil-hdr .sub{font-size:11px;opacity:.6;margin-top:2px}
+.oil-bg{background:rgba(255,255,255,.2);border-radius:20px;height:5px;margin-top:12px}
+.oil-fill{background:white;border-radius:20px;height:5px}
+.oil-meta{display:flex;justify-content:space-between;margin-top:5px;font-size:10.5px;opacity:.7}
+.oil-btn-row{display:flex;gap:8px;margin-top:12px}
+.oil-action-btn{flex:1;padding:8px;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:inherit}
+.oil-action-btn.use{background:rgba(255,255,255,.2);color:white}
+.oil-action-btn.topup{background:white;color:var(--green-dk)}
+.arc{background:var(--sur);border-radius:var(--r);border:0.5px solid var(--bd);padding:13px 14px;margin-bottom:8px}
+.ar-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.ar-name{font-size:13px;font-weight:700}
+.ar-inv{font-size:11px;color:var(--tx3);margin-top:2px}
+.ar-total{font-size:15px;font-weight:700;color:var(--blue);text-align:right}
+.ar-slbl{font-size:10px;color:var(--tx3);text-align:right;margin-top:1px}
+.ar-row{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.ar-row .l{font-size:12px;color:var(--tx2)}
+.ar-row .v{font-size:13px;font-weight:700}
+.ar-row .v.got{color:var(--green)}.ar-row .v.owe{color:var(--red)}
+.pr{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--bd)}
+.pr:last-child{border-bottom:none}
+.pr-date{font-size:11px;color:var(--tx3);flex:1}
+.pr-amt{font-size:13px;font-weight:700;color:var(--green)}
+.fr-row{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
+.fr-row::-webkit-scrollbar{display:none}
+.fb{padding:5px 13px;border-radius:20px;font-size:12px;border:0.5px solid var(--bd2);background:var(--sur);color:var(--tx2);cursor:pointer;white-space:nowrap;font-family:inherit}
+.fb.on{background:var(--green);color:white;border-color:var(--green)}
+.fab{position:fixed;bottom:22px;right:16px;width:50px;height:50px;border-radius:50%;background:var(--green);color:white;border:none;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(29,158,117,.35)}
+.fab:active{transform:scale(.93)}
+.mo-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;z-index:200}
+.mo-box{background:var(--sur);border-radius:20px 20px 0 0;padding:20px 16px 36px;width:100%;max-height:90vh;overflow-y:auto}
+.mo-handle{width:36px;height:4px;background:var(--bd2);border-radius:2px;margin:0 auto 16px}
+.mo-title{font-size:16px;font-weight:700;margin-bottom:16px}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:11px;color:var(--tx3);margin-bottom:5px;font-weight:500;letter-spacing:.3px;text-transform:uppercase}
+.fg input,.fg select{width:100%;padding:10px 12px;border:0.5px solid var(--bd2);border-radius:var(--rs);font-size:14px;background:var(--sur2);color:var(--tx);font-family:inherit;outline:none}
+.fg input:focus,.fg select:focus{border-color:var(--green)}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-row{display:flex;gap:8px;margin-top:18px}
+.btn{flex:1;padding:12px;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;border:0.5px solid var(--bd2);font-family:inherit}
+.btn:active{opacity:.8}
+.btn.pri{background:var(--green);color:white;border-color:var(--green)}
+.btn.sec{background:var(--sur2);color:var(--tx)}
+.btn.danger{background:var(--red-lt);color:var(--red);border-color:var(--red)}
+.eb{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:13px;padding:3px 5px;border-radius:5px;line-height:1}
+.eb.del{color:var(--red)}
+.add-pay-btn{width:100%;margin-top:10px;padding:8px;background:var(--green-lt);color:var(--green);border:none;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:12px;color:var(--tx3);font-size:13px}
+.spin{width:28px;height:28px;border:2.5px solid var(--bd2);border-top-color:var(--green);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px;color:var(--tx3);font-size:13px}
+.toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.note-box{font-size:11px;color:var(--tx3);margin-top:6px;padding-top:6px;border-top:0.5px solid var(--bd);font-style:italic}
+.total-bar{display:flex;justify-content:space-between;align-items:center;background:var(--red-lt);border-radius:var(--rs);padding:10px 14px;margin-bottom:10px}
+.total-bar .lbl{font-size:12px;color:var(--red);font-weight:500}
+.total-bar .val{font-size:16px;font-weight:700;color:var(--red)}
+.hl{background:rgba(255,220,0,.35);border-radius:3px}
+/* vendor select with add */
+.vd-wrap{position:relative}
+.vd-wrap select{width:100%;padding:10px 12px;border:0.5px solid var(--bd2);border-radius:var(--rs);font-size:14px;background:var(--sur2);color:var(--tx);font-family:inherit;outline:none}
+.vd-wrap select:focus{border-color:var(--green)}
+.add-vd-btn{margin-top:6px;background:none;border:0.5px dashed var(--bd2);border-radius:var(--rs);width:100%;padding:8px;font-size:12px;color:var(--tx3);cursor:pointer;font-family:inherit;text-align:left}
+.add-vd-btn:hover{border-color:var(--green);color:var(--green)}
+@media(min-width:600px){.app{max-width:520px}.content{padding:16px 16px 90px}.nav{top:105px}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-logo">弘盛工程行</div>
+    <div class="login-title">財務管理系統</div>
+    <div class="login-err" id="loginErr">Email 或密碼錯誤，請再試一次</div>
+    <div class="fg"><label>Email</label><input id="lemail" type="email" placeholder="doris840821@gmail.com" autocomplete="email"></div>
+    <div class="fg"><label>密碼</label><input id="lpwd" type="password" placeholder="輸入密碼" autocomplete="current-password"></div>
+    <div class="btn-row" style="margin-top:0">
+      <button class="btn pri" onclick="doLogin()">登入</button>
+      <button class="btn sec" onclick="guestMode()">僅供查閱</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appWrap" style="display:none">
+  <div class="topbar">
+    <div class="topbar-co">弘盛工程行</div>
+    <div class="topbar-row">
+      <div class="topbar-title">財務管理</div>
+      <div class="topbar-right">
+        <span id="roLabel" class="readonly-badge" style="display:none">僅供查閱</span>
+        <button class="export-top" onclick="exportExcel()">匯出 Excel</button>
+        <button class="logout-btn" id="logoutBtn" onclick="doLogout()" style="display:none">登出</button>
+      </div>
+    </div>
+    <div class="search-bar">
+      <span style="color:var(--tx3);font-size:14px">🔍</span>
+      <input type="text" id="gSearch" placeholder="搜尋收支、廠商、發票號碼..." oninput="onSearch(this.value)">
+      <button class="clear" id="clearBtn" style="display:none" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nb on" onclick="go('dash')">總覽</button>
+    <button class="nb" onclick="go('tx')">收支明細</button>
+    <button class="nb" onclick="go('ar')">應收款項</button>
+    <button class="nb" onclick="go('oil')">油卡</button>
+    <button class="nb" onclick="go('co')">公司支出</button>
+  </div>
+  <div class="content" id="content">
+    <div class="loading"><div class="spin"></div>載入中...</div>
+  </div>
+</div>
+<button class="fab" id="fab" onclick="openAdd()" style="display:none">+</button>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPA='https://afeyxcvkylznlckoveil.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmZXl4Y3ZreWx6bmxja292ZWlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDc4NDIsImV4cCI6MjA5MzAyMzg0Mn0.HHUNxpu6wwTRTzIxLLCtZDftZwYc3PlCR0tTruFuvUk';
+
+let SESSION=null; // null = guest, token = logged in
+let isAuth=false;
+
+function authHeaders(){
+  const h={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+(SESSION||KEY)};
+  if(SESSION) h['Prefer']='';
+  return h;
+}
+
+async function db(tb,mt='GET',bd=null,qs=''){
+  const h={...authHeaders()};
+  if(mt==='POST') h['Prefer']='return=representation';
+  const r=await fetch(SUPA+'/rest/v1/'+tb+qs,{method:mt,headers:h,body:bd?JSON.stringify(bd):null});
+  if(!r.ok)throw new Error(await r.text());
+  const t=await r.text();return t?JSON.parse(t):null;
+}
+
+async function doLogin(){
+  const email=document.getElementById('lemail').value.trim();
+  const pwd=document.getElementById('lpwd').value;
+  document.getElementById('loginErr').style.display='none';
+  try{
+    const r=await fetch(SUPA+'/auth/v1/token?grant_type=password',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':KEY},
+      body:JSON.stringify({email,password:pwd})
+    });
+    const d=await r.json();
+    if(!r.ok||!d.access_token) throw new Error('failed');
+    SESSION=d.access_token;
+    isAuth=true;
+    startApp();
+  }catch(e){
+    document.getElementById('loginErr').style.display='block';
+  }
+}
+
+function guestMode(){
+  SESSION=null;
+  isAuth=false;
+  startApp();
+}
+
+function doLogout(){
+  SESSION=null;isAuth=false;
+  document.getElementById('appWrap').style.display='none';
+  document.getElementById('loginWrap').style.display='flex';
+  document.getElementById('fab').style.display='none';
+}
+
+function startApp(){
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('appWrap').style.display='block';
+  document.getElementById('roLabel').style.display=isAuth?'none':'inline-block';
+  document.getElementById('logoutBtn').style.display=isAuth?'inline-block':'none';
+  document.getElementById('fab').style.display=isAuth?'flex':'none';
+  init();
+}
+
+// enter key on login
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginWrap').style.display!=='none')doLogin();});
+
+let tab='dash',txF='all',arF='all',coF='all',searchQ='';
+let TXS=[],ARS=[],OILS=[],COS=[];
+
+// 廠商清單（可動態新增）
+let VENDORS=[
+  '晉麒企業','中央吊車','力泰起重','鑫記五金','公司支出-薪水','公司支出-油錢',
+  '井源工程行','壩鑫企業有限公司','井元有限公司','正興機械','嘉泰汽車','耀慶國際',
+  '良錦工程行','榮越石業有限公司','承毅基礎營造','展鉅國際興業有限公司','帛恆企業有限公司',
+  '三鐽有限公司','順益企業有限公司','巨金機電有限公司','益昌氣體有限公司',
+  '中國銲條機械股份有限公司','騰翔氣體有限公司','北邑運輸有限公司','中原氣體有限公司',
+  '裕升起重行','興偉五金有限公司','宏達全球股份有限公司','皓鑫鋼業有限公司',
+  '日立昇起重工程行','各保企業有限公司','揚億機械五金','詠達鋼業','全穩實業股份有限公司',
+  '聖陸營造','宸新營造','璟太營造','哲在營造','柏崴營造'
+];
+
+// 載入儲存的廠商
+function loadVendors(){
+  try{const s=localStorage.getItem('hs_vendors');if(s)VENDORS=JSON.parse(s);}catch(e){}
+}
+function saveVendors(){
+  try{localStorage.setItem('hs_vendors',JSON.stringify(VENDORS));}catch(e){}
+}
+function addVendor(name){
+  if(!name||VENDORS.includes(name))return;
+  VENDORS.push(name);saveVendors();
+}
+
+// 廠商下拉 HTML
+function vendorSelect(id,val=''){
+  return`<div class="vd-wrap">
+  <select id="${id}">${VENDORS.map(v=>'<option value="'+v+'"'+(v===val?' selected':'')+'>'+v+'</option>').join('')}</select>
+  ${isAuth?'<button type="button" class="add-vd-btn" onclick="promptAddVendor(\''+id+'\')">＋ 新增廠商到清單</button>':''}
+</div>`;
+}
+
+function promptAddVendor(selectId){
+  const name=prompt('輸入新廠商名稱：');
+  if(!name||!name.trim())return;
+  addVendor(name.trim());
+  // 重新渲染 select
+  const wrap=document.getElementById(selectId).parentElement;
+  wrap.innerHTML=`<select id="${selectId}">${VENDORS.map(v=>'<option value="'+v+'"'+(v===name.trim()?' selected':'')+'>'+v+'</option>').join('')}</select>${isAuth?'<button type="button" class="add-vd-btn" onclick="promptAddVendor(\''+selectId+'\')">＋ 新增廠商到清單</button>':''}`;
+}
+
+const SEED_TX=[
+  {type:'收到款項',date:'2026-02-09',source:'井源工程行',amount:124950,direction:'收入',status:'待匯款',invoice:'VT32610902',note:''},
+  {type:'收到款項',date:'2026-02-09',source:'壩鑫企業有限公司',amount:65100,direction:'收入',status:'已匯款',invoice:'VT32610901',note:'3/4收到現金'},
+  {type:'收到款項',date:'2026-02-09',source:'井元有限公司',amount:64680,direction:'收入',status:'已匯款',invoice:'VT32610904',note:'支票票期115/2/9'},
+  {type:'工人薪水',date:'2026-02-10',source:'公司支出-薪水',amount:94600,direction:'支出',status:'已匯款',invoice:'',note:''},
+  {type:'五金材料',date:'2026-02-25',source:'晉麒企業',amount:1207500,direction:'支出',status:'已匯款',invoice:'',note:''},
+  {type:'五金材料',date:'2026-02-25',source:'中央吊車',amount:162750,direction:'支出',status:'已匯款',invoice:'',note:''},
+  {type:'五金材料',date:'2026-02-25',source:'鑫記五金',amount:23818,direction:'支出',status:'已匯款',invoice:'',note:''},
+  {type:'五金材料',date:'2026-02-25',source:'力泰起重',amount:7560,direction:'支出',status:'已匯款',invoice:'',note:''},
+  {type:'收到款項',date:'2026-02-28',source:'承毅基礎營造',amount:63000,direction:'收入',status:'已匯款',invoice:'VT32610905',note:'4/17收到支票。票期5/25'},
+  {type:'工人薪水',date:'2026-03-10',source:'公司支出-薪水',amount:40000,direction:'支出',status:'已匯款',invoice:'',note:''},
+  {type:'五金材料',date:'2026-03-10',source:'晉麒企業',amount:48873,direction:'支出',status:'已匯款',invoice:'',note:''},
+  {type:'五金材料',date:'2026-03-10',source:'中央吊車',amount:64050,direction:'支出',status:'已匯款',invoice:'',note:''},
+  {type:'油錢',date:'2026-03-11',source:'公司支出-油錢',amount:46997,direction:'支出',status:'已匯款',invoice:'',note:''},
+  {type:'五金材料',date:'2026-03-30',source:'正興機械',amount:590909,direction:'支出',status:'已匯款',invoice:'VT07821470',note:'開支票'},
+  {type:'油錢',date:'2026-04-01',source:'公司支出-油錢',amount:300000,direction:'支出',status:'已匯款',invoice:'',note:'儲值油卡'},
+  {type:'五金材料',date:'2026-04-08',source:'鑫記五金',amount:13515,direction:'支出',status:'待匯款',invoice:'',note:''},
+  {type:'五金材料',date:'2026-04-08',source:'嘉泰汽車',amount:2363,direction:'支出',status:'待匯款',invoice:'',note:''},
+  {type:'五金材料',date:'2026-04-08',source:'耀慶國際',amount:94689,direction:'支出',status:'待匯款',invoice:'',note:''},
+  {type:'五金材料',date:'2026-04-08',source:'良錦工程行',amount:24150,direction:'支出',status:'待匯款',invoice:'',note:''},
+  {type:'收到款項',date:'2026-04-08',source:'榮越石業有限公司',amount:188197,direction:'收入',status:'已匯款',invoice:'XV32802151',note:'發票金額$188,475不知道在搞啥總之收到188197'},
+  {type:'收到款項',date:'2026-04-08',source:'壩鑫企業有限公司',amount:175320,direction:'收入',status:'已匯款',invoice:'XV32802152',note:'發票金額175350，扣手續費$30，4/17收到匯款'},
+  {type:'收到款項',date:'2026-04-08',source:'井源工程行',amount:129780,direction:'收入',status:'待匯款',invoice:'XV32802153',note:'4/24收到十萬，還差29780'},
+  {type:'收到款項',date:'2026-04-08',source:'井源工程行',amount:63420,direction:'收入',status:'待匯款',invoice:'XV32802154',note:''},
+  {type:'工人薪水',date:'2026-04-10',source:'公司支出-薪水',amount:116000,direction:'支出',status:'已匯款',invoice:'',note:''},
+  {type:'佣金',date:'2026-04-24',source:'壩鑫企業有限公司',amount:124200,direction:'支出',status:'已匯款',invoice:'',note:''},
+  {type:'五金材料',date:'2026-04-27',source:'展鉅國際興業有限公司',amount:223965,direction:'支出',status:'已匯款',invoice:'XV06341319',note:''},
+  {type:'五金材料',date:'2026-04-27',source:'帛恆企業有限公司',amount:320901,direction:'支出',status:'已匯款',invoice:'XV38062175',note:''},
+  {type:'五金材料',date:'2026-04-27',source:'嘉泰汽車',amount:2363,direction:'支出',status:'已匯款',invoice:'XV53474232',note:''},
+  {type:'五金材料',date:'2026-04-27',source:'良錦工程行',amount:24150,direction:'支出',status:'已匯款',invoice:'XV37566150',note:''},
+  {type:'五金材料',date:'2026-04-27',source:'耀慶國際',amount:94689,direction:'支出',status:'已匯款',invoice:'XV04203723',note:''},
+  {type:'五金材料',date:'2026-04-27',source:'中央吊車',amount:73500,direction:'支出',status:'已匯款',invoice:'XV16733132',note:''},
+  {type:'五金材料',date:'2026-04-27',source:'公司支出--水桶',amount:87500,direction:'支出',status:'已匯款',invoice:'',note:''},
+  {type:'五金材料',date:'2026-04-27',source:'公司支出--制服',amount:55125,direction:'支出',status:'已匯款',invoice:'',note:'150件，總金額$55125'},
+];
+const SEED_AR=[
+  {client:'井源工程行',invoice:'VT32610902',total_amount:124950,payments:[],note:''},
+  {client:'井源工程行',invoice:'XV32802153',total_amount:129780,payments:[{date:'2026-04-24',amount:100000,note:'現金收款'}],note:'4/24收到十萬，還差29780'},
+  {client:'井源工程行',invoice:'XV32802154',total_amount:63420,payments:[],note:''},
+];
+const SEED_OIL=[
+  {name:'儲值油卡-1',topups:[{date:'2026-04-01',amount:300000,note:''}],logs:[
+    {date:'2026-03-31',amount:11880},{date:'2026-04-09',amount:15502},
+    {date:'2026-04-16',amount:12500},{date:'2026-04-24',amount:11000},{date:'2026-04-27',amount:9708}
+  ]}
+];
+const SEED_CO=[
+  {name:'年度保險',period:'114/10/2-115/10/2',amount:30000,freq:'每年',note:'',date:''},
+  {name:'鑽堡機器訂金（第二台）正興機械',period:'114/12/12',amount:100000,freq:'單次',note:'宜蘭鐵工廠',date:'2024-12-12'},
+  {name:'鑽堡材料費',period:'114/12/23',amount:736890,freq:'單次',note:'',date:'2024-12-23'},
+  {name:'鑽堡運費',period:'114/12/23',amount:5250,freq:'單次',note:'',date:'2024-12-23'},
+  {name:'鑽堡機器第一台全額',period:'115/1/17',amount:2000000,freq:'單次',note:'',date:'2025-01-17'},
+  {name:'購買公司貨車',period:'',amount:1575000,freq:'單次',note:'',date:''},
+  {name:'公司貨車保險',period:'',amount:38288,freq:'單次',note:'',date:''},
+  {name:'尾門',period:'',amount:60200,freq:'單次',note:'',date:''},
+  {name:'領牌稅金費/加油/ETC',period:'',amount:12062,freq:'單次',note:'',date:''},
+  {name:'倉庫租金',period:'2024-12',amount:30000,freq:'每月',note:'',date:'2024-12-01'},
+  {name:'倉庫租金',period:'2025-01',amount:30000,freq:'每月',note:'',date:'2025-01-01'},
+  {name:'倉庫租金',period:'2025-02',amount:30000,freq:'每月',note:'',date:'2025-02-01'},
+  {name:'倉庫租金',period:'2025-03',amount:30000,freq:'每月',note:'',date:'2025-03-01'},
+  {name:'公司租金',period:'2024-12',amount:15000,freq:'每月',note:'',date:'2024-12-01'},
+  {name:'公司租金',period:'2025-01',amount:15000,freq:'每月',note:'',date:'2025-01-01'},
+  {name:'公司租金',period:'2025-02',amount:15000,freq:'每月',note:'',date:'2025-02-01'},
+  {name:'公司租金',period:'2025-03',amount:15000,freq:'每月',note:'',date:'2025-03-01'},
+  {name:'會計費用',period:'2024-12',amount:36000,freq:'每月',note:'',date:'2024-12-01'},
+  {name:'會計費用',period:'2025-01',amount:36000,freq:'每月',note:'',date:'2025-01-01'},
+  {name:'會計費用',period:'2025-02',amount:36000,freq:'每月',note:'',date:'2025-02-01'},
+  {name:'會計費用',period:'2025-03',amount:36000,freq:'每月',note:'',date:'2025-03-01'},
+  {name:'鑽堡機器（第三台訂金）',period:'',amount:1600000,freq:'單次',note:'總價560萬，訂金160萬',date:''},
+  {name:'儲值油卡-1',period:'115/3/17',amount:300000,freq:'單次',note:'',date:'2026-04-01'},
+];
+
+const oilTotalTopup=c=>(c.topups||[]).reduce((s,t)=>s+Number(t.amount),0);
+const oilTotalUsed=c=>(c.logs||[]).reduce((s,l)=>s+Number(l.amount),0);
+const oilR=c=>oilTotalTopup(c)-oilTotalUsed(c);
+const arG=r=>(r.payments||[]).reduce((s,p)=>s+Number(p.amount),0);
+const arO=r=>Number(r.total_amount)-arG(r);
+const fmt=n=>'$'+Math.round(n).toLocaleString();
+const fd=d=>d?d.replace(/-/g,'/'):'-';
+const today=()=>new Date().toISOString().slice(0,10);
+
+function hl(text,q){
+  if(!q)return text;
+  const re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+  return String(text).replace(re,'<span class="hl">$1</span>');
+}
+
+async function init(){
+  loadVendors();
+  try{
+    const[txs,ars,oils,cos]=await Promise.all([
+      db('transactions','GET',null,'?select=*&order=date.desc'),
+      db('receivables','GET',null,'?select=*&order=created_at.asc'),
+      db('oil_cards','GET',null,'?select=*&order=created_at.asc'),
+      db('company_expenses','GET',null,'?select=*&order=freq.asc,date.asc,created_at.asc'),
+    ]);
+    if(isAuth){
+      if(!txs||txs.length===0)for(const t of SEED_TX)await db('transactions','POST',t);
+      if(!ars||ars.length===0)for(const r of SEED_AR)await db('receivables','POST',r);
+      if(!oils||oils.length===0)for(const o of SEED_OIL)await db('oil_cards','POST',o);
+      if(!cos||cos.length===0)for(const c of SEED_CO)await db('company_expenses','POST',c);
+    }
+    await loadAll();
+    if(isAuth){ const added=await checkAutoMonthly(); if(added) await loadAll(); }
+  }catch(e){
+    document.getElementById('content').innerHTML='<div class="loading"><p style="color:var(--red)">連線失敗：'+e.message+'</p></div>';
+  }
+}
+
+async function loadAll(){
+  const[txs,ars,oils,cos]=await Promise.all([
+    db('transactions','GET',null,'?select=*&order=date.desc'),
+    db('receivables','GET',null,'?select=*&order=created_at.asc'),
+    db('oil_cards','GET',null,'?select=*&order=created_at.asc'),
+    db('company_expenses','GET',null,'?select=*&order=freq.asc,date.asc,created_at.asc'),
+  ]);
+  TXS=txs||[];ARS=ars||[];OILS=oils||[];COS=cos||[];
+  render();
+}
+
+function onSearch(v){
+  searchQ=v.trim();
+  document.getElementById('clearBtn').style.display=searchQ?'block':'none';
+  render();
+}
+function clearSearch(){
+  searchQ='';
+  document.getElementById('gSearch').value='';
+  document.getElementById('clearBtn').style.display='none';
+  render();
+}
+
+function go(t){
+  tab=t;
+  document.querySelectorAll('.nb').forEach((b,i)=>b.classList.toggle('on',['dash','tx','ar','oil','co'][i]===t));
+  render();
+}
+function render(){
+  if(searchQ){document.getElementById('content').innerHTML=rSearch();return;}
+  document.getElementById('content').innerHTML={dash:rDash,tx:rTx,ar:rAR,oil:rOil,co:rCO}[tab]();
+}
+
+// ── SEARCH ──
+function rSearch(){
+  const q=searchQ.toLowerCase();
+  const txHits=TXS.filter(t=>[t.source,t.type,t.invoice,t.note,t.status,String(t.amount)].some(v=>(v||'').toLowerCase().includes(q)));
+  const arHits=ARS.filter(r=>[r.client,r.invoice,r.note,String(r.total_amount)].some(v=>(v||'').toLowerCase().includes(q)));
+  const coHits=COS.filter(e=>[e.name,e.period,e.note,String(e.amount),e.freq].some(v=>(v||'').toLowerCase().includes(q)));
+  const total=txHits.length+arHits.length+coHits.length;
+  return`<div style="font-size:13px;color:var(--tx3);margin-bottom:12px">找到 <strong style="color:var(--tx)">${total}</strong> 筆結果</div>
+${txHits.length?`<div class="sec">收支明細 (${txHits.length})</div><div class="card ci">
+${txHits.map(t=>`<div class="tr">
+  <div class="ti-ico ${t.direction==='收入'?'inc':'exp'}">${t.direction==='收入'?'↑':'↓'}</div>
+  <div class="ti-info"><div class="ti-name">${hl(t.source,searchQ)}</div>
+  <div class="ti-meta">${fd(t.date)} · <span class="bdg tp">${t.type}</span></div>
+  ${t.invoice?'<div style="font-size:10px;color:var(--tx3)">'+hl(t.invoice,searchQ)+'</div>':''}
+  ${t.note?'<div style="font-size:11px;color:var(--tx3)">'+hl(t.note,searchQ)+'</div>':''}</div>
+  <div class="ti-right"><div class="amt ${t.direction==='收入'?'inc':'exp'}">${t.direction==='收入'?'+':'−'}${fmt(t.amount)}</div>
+  <span class="bdg ${t.status==='已匯款'?'done':'wait'}">${t.status}</span><div><span class="bdg src">收支明細</span></div></div>
+</div>`).join('')}</div>`:''}
+${arHits.length?`<div class="sec">應收款項 (${arHits.length})</div><div class="card ci">
+${arHits.map(r=>`<div class="tr">
+  <div class="ti-ico inc">↑</div>
+  <div class="ti-info"><div class="ti-name">${hl(r.client,searchQ)}</div>
+  ${r.invoice?'<div class="ti-meta">發票 '+hl(r.invoice,searchQ)+'</div>':''}
+  ${r.note?'<div style="font-size:11px;color:var(--tx3)">'+hl(r.note,searchQ)+'</div>':''}</div>
+  <div class="ti-right"><div class="amt inc">${fmt(r.total_amount)}</div>
+  <div style="font-size:11px;color:var(--red)">未收 ${fmt(arO(r))}</div><div><span class="bdg src">應收款項</span></div></div>
+</div>`).join('')}</div>`:''}
+${coHits.length?`<div class="sec">公司支出 (${coHits.length})</div><div class="card ci">
+${coHits.map(e=>`<div class="tr">
+  <div class="ti-info"><div class="ti-name">${hl(e.name,searchQ)}</div>
+  <div class="ti-meta">${e.date?fd(e.date)+' · ':''}${e.period?hl(e.period,searchQ)+' · ':''}<span class="bdg tp">${e.freq}</span></div>
+  ${e.note?'<div style="font-size:11px;color:var(--tx3)">'+hl(e.note,searchQ)+'</div>':''}</div>
+  <div class="ti-right"><div class="amt exp">−${fmt(e.amount)}</div><div><span class="bdg src">公司支出</span></div></div>
+</div>`).join('')}</div>`:''}
+${total===0?'<div class="empty">找不到符合「'+searchQ+'」的記錄</div>':''}`;
+}
+
+// ── DASHBOARD ──
+function rDash(){
+  const inc=TXS.filter(t=>t.direction==='收入');
+  const totI=inc.reduce((s,t)=>s+Number(t.amount),0);
+  const txGot=inc.filter(t=>t.status==='已匯款').reduce((s,t)=>s+Number(t.amount),0);
+  const arGotTotal=ARS.reduce((s,r)=>s+arG(r),0);
+  const gotI=txGot+arGotTotal;
+  const txPending=inc.filter(t=>t.status==='待匯款').reduce((s,t)=>s+Number(t.amount),0);
+  const arPending=ARS.reduce((s,r)=>s+arO(r),0);
+  const txExp=TXS.filter(t=>t.direction==='支出').reduce((s,t)=>s+Number(t.amount),0);
+  const coExp=COS.reduce((s,e)=>s+Number(e.amount),0);
+  const totE=txExp+coExp;
+  const bal=txGot-totE;
+  const arT=ARS.reduce((s,r)=>s+Number(r.total_amount),0);
+  const oilL=OILS.reduce((s,c)=>s+oilR(c),0);
+  return`
+<div class="sec" style="margin-top:2px">收入概況</div>
+<div class="g2">
+  <div class="st"><div class="lb">總收入</div><div class="vl cb">${fmt(totI)}</div></div>
+  <div class="st"><div class="lb">已收款</div><div class="vl cg">${fmt(gotI)}</div></div>
+</div>
+<div class="g2">
+  <div class="st"><div class="lb">收支明細未收款</div><div class="vl ca">${fmt(txPending)}</div><div style="font-size:10px;color:var(--tx3);margin-top:3px">待匯款紀錄合計</div></div>
+  <div class="st"><div class="lb">應收帳款未收款</div><div class="vl ca">${fmt(arPending)}</div><div style="font-size:10px;color:var(--tx3);margin-top:3px">扣除已收部分</div></div>
+</div>
+<div class="g2">
+  <div class="st"><div class="lb">總支出</div><div class="vl cr">${fmt(totE)}</div><div style="font-size:10px;color:var(--tx3);margin-top:3px">含公司支出 ${fmt(coExp)}</div></div>
+  <div class="st"><div class="lb">實際結餘</div><div class="vl ${bal>=0?'cg':'cr'}">${fmt(bal)}</div></div>
+</div>
+<div class="sec">應收帳款</div>
+<div class="card" style="padding:13px 14px">
+  <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+    <div><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">合約總額</div><div style="font-size:17px;font-weight:700;color:var(--blue)">${fmt(arT)}</div></div>
+    <div style="text-align:right"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">未收餘款</div><div style="font-size:17px;font-weight:700;color:var(--red)">${fmt(arPending)}</div></div>
+  </div>
+  <div class="pw"><div class="pf" style="width:${arT?Math.round(arGotTotal/arT*100):0}%"></div></div>
+  <div class="pl"><span>已收 ${fmt(arGotTotal)}</span><span>${arT?Math.round(arGotTotal/arT*100):0}%</span></div>
+</div>
+<div class="card" style="background:var(--green);color:white;cursor:pointer;padding:14px" onclick="go('oil')">
+  <div style="font-size:11px;opacity:.75;margin-bottom:3px">油卡餘額</div>
+  <div style="font-size:22px;font-weight:700">${fmt(oilL)}</div>
+  <div style="font-size:11px;opacity:.6;margin-top:2px">點擊查看詳情 →</div>
+</div>
+<div class="sec">最近交易</div>
+<div class="card ci">
+${TXS.slice(0,5).map(t=>`<div class="tr">
+  <div class="ti-ico ${t.direction==='收入'?'inc':'exp'}">${t.direction==='收入'?'↑':'↓'}</div>
+  <div class="ti-info"><div class="ti-name">${t.source}</div><div class="ti-meta">${fd(t.date)} · <span class="bdg tp">${t.type}</span></div></div>
+  <div class="ti-right"><div class="amt ${t.direction==='收入'?'inc':'exp'}">${t.direction==='收入'?'+':'−'}${fmt(t.amount)}</div><span class="bdg ${t.status==='已匯款'?'done':'wait'}">${t.status}</span></div>
+</div>`).join('')}
+</div>`;
+}
+
+// ── TX ──
+function rTx(){
+  let L=[...TXS];
+  if(txF==='收入')L=L.filter(t=>t.direction==='收入');
+  else if(txF==='支出')L=L.filter(t=>t.direction==='支出');
+  else if(txF==='待匯款')L=L.filter(t=>t.status==='待匯款');
+  const totalInc=TXS.filter(t=>t.direction==='收入').reduce((s,t)=>s+Number(t.amount),0);
+  const totalExp=TXS.filter(t=>t.direction==='支出').reduce((s,t)=>s+Number(t.amount),0);
+  const cats={};
+  TXS.filter(t=>t.direction==='支出').forEach(t=>{cats[t.type]=(cats[t.type]||0)+Number(t.amount);});
+  const catRows=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  return`
+<div class="g2">
+  <div class="st"><div class="lb">收入總計</div><div class="vl cg">${fmt(totalInc)}</div></div>
+  <div class="st"><div class="lb">支出總計</div><div class="vl cr">${fmt(totalExp)}</div></div>
+</div>
+<div class="sec">支出類別統整</div>
+<div class="card ci">
+${catRows.map(([type,amt])=>{
+  const pct=Math.round(amt/totalExp*100);
+  return`<div class="tr" style="align-items:center">
+  <div class="ti-info"><div class="ti-name">${type}</div>
+  <div class="pw" style="margin-top:5px"><div class="pf am" style="width:${pct}%"></div></div></div>
+  <div class="ti-right" style="min-width:90px"><div class="amt exp">−${fmt(amt)}</div><div style="font-size:10px;color:var(--tx3);margin-top:2px">${pct}%</div></div>
+</div>`;}).join('')}
+</div>
+<div class="fr-row">
+${[['all','全部'],['收入','收入'],['支出','支出'],['待匯款','待匯款']].map(([v,l])=>`<button class="fb ${txF===v?'on':''}" onclick="txF='${v}';render()">${l}</button>`).join('')}
+</div>
+<div class="card ci">
+${L.length===0?'<div class="empty">沒有記錄</div>':L.map(t=>`<div class="tr">
+  <div class="ti-ico ${t.direction==='收入'?'inc':'exp'}">${t.direction==='收入'?'↑':'↓'}</div>
+  <div class="ti-info"><div class="ti-name">${t.source}</div><div class="ti-meta">${fd(t.date)}</div>
+  <div><span class="bdg tp">${t.type}</span>${t.invoice?' <span style="font-size:10px;color:var(--tx3);margin-left:4px">'+t.invoice+'</span>':''}</div>
+  ${t.note?'<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+t.note+'</div>':''}</div>
+  <div class="ti-right"><div class="amt ${t.direction==='收入'?'inc':'exp'}">${t.direction==='收入'?'+':'−'}${fmt(t.amount)}</div>
+  <span class="bdg ${t.status==='已匯款'?'done':'wait'}">${t.status}</span>
+  ${isAuth?'<div style="margin-top:4px"><button class="eb" onclick="eTx('+t.id+')">✏️</button> <button class="eb del" onclick="dTx('+t.id+')">✕</button></div>':''}
+  </div>
+</div>`).join('')}</div>`;
+}
+
+// ── AR ──
+function rAR(){
+  let L=[...ARS];
+  if(arF==='未收完')L=L.filter(r=>arO(r)>0);
+  else if(arF==='已結清')L=L.filter(r=>arO(r)<=0);
+  const tot=ARS.reduce((s,r)=>s+Number(r.total_amount),0);
+  const got=ARS.reduce((s,r)=>s+arG(r),0);
+  return`<div class="g3">
+  <div class="st"><div class="lb">合約總額</div><div class="vl cb">${fmt(tot)}</div></div>
+  <div class="st"><div class="lb">已收款</div><div class="vl cg">${fmt(got)}</div></div>
+  <div class="st"><div class="lb">未收餘款</div><div class="vl cr">${fmt(tot-got)}</div></div>
+</div>
+<div class="fr-row">
+${[['all','全部'],['未收完','未收完'],['已結清','已結清']].map(([v,l])=>`<button class="fb ${arF===v?'on':''}" onclick="arF='${v}';render()">${l}</button>`).join('')}
+</div>
+${L.length===0?'<div class="empty">沒有記錄</div>':L.map(r=>{
+  const rc=arG(r),ow=arO(r),pct=r.total_amount?Math.round(rc/Number(r.total_amount)*100):0;
+  return`<div class="arc">
+  <div class="ar-top">
+    <div><div class="ar-name">${r.client}</div>${r.invoice?'<div class="ar-inv">發票 '+r.invoice+'</div>':''}</div>
+    <div style="display:flex;gap:4px;align-items:flex-start">
+      <div><div class="ar-total">${fmt(r.total_amount)}</div><div class="ar-slbl">合約總額</div></div>
+      ${isAuth?'<div style="margin-top:2px"><button class="eb" onclick="eAR('+r.id+')">✏️</button><button class="eb del" onclick="dAR('+r.id+')">✕</button></div>':''}
+    </div>
+  </div>
+  <div style="margin-top:10px">
+    <div class="ar-row"><span class="l">已收款</span><span class="v got">+${fmt(rc)}</span></div>
+    <div class="ar-row"><span class="l">尚未收款</span><span class="v owe">${fmt(ow)}</span></div>
+    <div class="pw"><div class="pf ${ow>0?'am':''}" style="width:${pct}%"></div></div>
+    <div class="pl"><span>已收 ${pct}%</span><span>${ow<=0?'✓ 已結清':'還差 '+fmt(ow)}</span></div>
+  </div>
+  ${(r.payments||[]).length?`<div style="margin-top:10px;padding-top:8px;border-top:0.5px solid var(--bd)">
+    <div style="font-size:11px;color:var(--tx3);margin-bottom:5px;font-weight:500">收款記錄</div>
+    ${r.payments.map(p=>'<div class="pr"><span class="pr-date">'+fd(p.date)+'</span><span class="pr-amt">+'+fmt(p.amount)+'</span>'+(p.note?'<span style="font-size:11px;color:var(--tx3)">'+p.note+'</span>':'')+'</div>').join('')}
+  </div>`:''}
+  ${r.note?'<div class="note-box">'+r.note+'</div>':''}
+  ${isAuth?'<button class="add-pay-btn" onclick="addPay('+r.id+')">+ 新增收款記錄</button>':''}
+</div>`;}).join('')}`;
+}
+
+// ── OIL ──
+function rOil(){
+  return OILS.map(c=>{
+    const rem=oilR(c),totTop=oilTotalTopup(c),pct=totTop?Math.round(rem/totTop*100):0;
+    const sorted=[...(c.topups||[]).map(t=>({...t,kind:'topup'})),...(c.logs||[]).map(l=>({...l,kind:'use'}))].sort((a,b)=>a.date.localeCompare(b.date));
+    let running=0;
+    const withBal=sorted.map(e=>{running+=e.kind==='topup'?Number(e.amount):-Number(e.amount);return{...e,bal:running};});
+    const rows=[...withBal].reverse().map(entry=>{
+      const isTopup=entry.kind==='topup';
+      const origArr=isTopup?(c.topups||[]):(c.logs||[]);
+      const origIdx=origArr.findIndex(x=>x.date===entry.date&&Number(x.amount)===Number(entry.amount));
+      return`<div class="tr" style="align-items:center">
+        <div style="flex:1"><div style="font-size:12px;color:var(--tx3)">${fd(entry.date)}</div>${isTopup?'<span class="bdg topup" style="margin-top:3px">儲值</span>':''}</div>
+        <div style="font-size:13px;font-weight:700;color:${isTopup?'var(--green)':'var(--red)'};margin-right:8px">${isTopup?'+':'−'}${fmt(entry.amount)}</div>
+        <div style="text-align:right;min-width:72px"><div style="font-size:10px;color:var(--tx3)">餘額</div><div style="font-size:13px;font-weight:700">${fmt(entry.bal)}</div></div>
+        ${isAuth?'<button class="eb del" style="margin-left:6px" onclick="'+(isTopup?'delOilTopup':'delOilLog')+'('+c.id+','+origIdx+')">✕</button>':''}
+      </div>`;
+    });
+    return`<div class="oil-hdr">
+  <div class="lb">${c.name}</div><div class="bal">${fmt(rem)}</div>
+  <div class="sub">總儲值 ${fmt(totTop)} · 已使用 ${fmt(oilTotalUsed(c))}</div>
+  <div class="oil-bg"><div class="oil-fill" style="width:${Math.min(pct,100)}%"></div></div>
+  <div class="oil-meta"><span>剩餘 ${pct}%</span><span>共 ${(c.topups||[]).length} 次儲值</span></div>
+  ${isAuth?`<div class="oil-btn-row">
+    <button class="oil-action-btn use" onclick="oOilUse(${c.id})">記錄加油</button>
+    <button class="oil-action-btn topup" onclick="oOilTopup(${c.id})">儲值油卡</button>
+  </div>`:''}
+</div>
+<div class="sec">所有記錄</div>
+<div class="card ci">${rows.length?rows.join(''):'<div class="empty">尚無記錄</div>'}</div>`;
+  }).join('');
+}
+
+// ── CO ──
+function rCO(){
+  let L=[...COS];
+  if(coF==='每月')L=L.filter(e=>e.freq==='每月');
+  else if(coF==='每年')L=L.filter(e=>e.freq==='每年');
+  else if(coF==='單次')L=L.filter(e=>e.freq==='單次');
+  const mo=COS.filter(e=>e.freq==='每月').reduce((s,e)=>s+Number(e.amount),0);
+  const yr=COS.filter(e=>e.freq==='每年').reduce((s,e)=>s+Number(e.amount),0);
+  const oc=COS.filter(e=>e.freq==='單次').reduce((s,e)=>s+Number(e.amount),0);
+  const total=COS.reduce((s,e)=>s+Number(e.amount),0);
+  const ftotal=L.reduce((s,e)=>s+Number(e.amount),0);
+  return`<div class="g3">
+  <div class="st"><div class="lb">每月固定</div><div class="vl cr">${fmt(mo)}</div></div>
+  <div class="st"><div class="lb">每年</div><div class="vl ca">${fmt(yr)}</div></div>
+  <div class="st"><div class="lb">單次合計</div><div class="vl cr">${fmt(oc)}</div></div>
+</div>
+<div class="total-bar"><span class="lbl">全部支出總計</span><span class="val">${fmt(total)}</span></div>
+<div class="fr-row">
+${[['all','全部'],['每月','每月'],['每年','每年'],['單次','單次']].map(([v,l])=>`<button class="fb ${coF===v?'on':''}" onclick="coF='${v}';render()">${l}</button>`).join('')}
+</div>
+${coF!=='all'?`<div style="font-size:12px;color:var(--tx3);margin-bottom:8px;text-align:right">篩選小計：<strong style="color:var(--red)">${fmt(ftotal)}</strong></div>`:''}
+<div class="card ci">
+${L.length===0?'<div class="empty">沒有記錄</div>':L.map(e=>`<div class="tr">
+  <div class="ti-info"><div class="ti-name">${e.name}</div>
+  <div class="ti-meta">${e.date?fd(e.date)+' · ':''}${e.period&&e.period!==e.date?e.period+' · ':''}<span class="bdg tp">${e.freq}</span></div>
+  ${e.note?'<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+e.note+'</div>':''}</div>
+  <div class="ti-right"><div class="amt exp">−${fmt(e.amount)}</div>
+  ${isAuth?'<div style="margin-top:4px"><button class="eb" onclick="eCO('+e.id+')">✏️</button> <button class="eb del" onclick="dCO('+e.id+')">✕</button></div>':''}
+  </div>
+</div>`).join('')}</div>`;
+}
+
+// ── ADD ROUTER ──
+function openAdd(){
+  if(!isAuth)return;
+  const m={tx:oTx,ar:oAR,oil:()=>oOilUse(OILS[0]&&OILS[0].id),co:oCO,dash:oTx};
+  (m[tab]||oTx)();
+}
+
+// ── TX MODAL ──
+function oTx(e=null){
+  mo(`${e?'編輯':'新增'}交易記錄`,`
+<div class="fr2">
+  <div class="fg"><label>類型</label><select id="tt">
+    ${['收到款項','工人薪水','五金材料','油錢','佣金','公司支出'].map(x=>`<option ${e&&e.type===x?'selected':''}>${x}</option>`).join('')}
+  </select></div>
+  <div class="fg"><label>收 / 支</label><select id="td">
+    <option value="支出" ${e&&e.direction==='支出'?'selected':''}>支出</option>
+    <option value="收入" ${e&&e.direction==='收入'?'selected':''}>收入</option>
+  </select></div>
+</div>
+<div class="fg"><label>日期</label><input id="tdt" type="date" value="${e?e.date:today()}"></div>
+<div class="fg"><label>廠商 / 對象</label>${vendorSelect('ts',e?e.source:'')}</div>
+<div class="fg"><label>金額 ($)</label><input id="ta" type="number" value="${e?e.amount:''}"></div>
+<div class="fr2">
+  <div class="fg"><label>匯款狀態</label><select id="tst">
+    <option ${!e||e.status==='已匯款'?'selected':''}>已匯款</option>
+    <option ${e&&e.status==='待匯款'?'selected':''}>待匯款</option>
+  </select></div>
+  <div class="fg"><label>發票號碼</label><input id="ti" type="text" value="${e?e.invoice||'':''}"></div>
+</div>
+<div class="fg"><label>備註</label><input id="tn" type="text" value="${e?e.note||'':''}"></div>`,
+  async()=>{
+    const d={type:g('tt'),date:g('tdt'),source:g('ts')||'（未填）',amount:parseFloat(g('ta'))||0,direction:g('td'),status:g('tst'),invoice:g('ti'),note:g('tn')};
+    if(e)await db('transactions','PATCH',d,'?id=eq.'+e.id);
+    else await db('transactions','POST',d);
+    await loadAll();toast(e?'已更新':'已新增');
+  },e?()=>dTx(e.id):null);
+}
+
+// ── AR MODAL ──
+function oAR(e=null){
+  mo(`${e?'編輯':'新增'}應收款項`,`
+<div class="fg"><label>客戶名稱</label>${vendorSelect('ac',e?e.client:'')}</div>
+<div class="fg"><label>合約總金額 ($)</label><input id="at" type="number" value="${e?e.total_amount:''}"></div>
+<div class="fg"><label>發票號碼</label><input id="ai" type="text" value="${e?e.invoice||'':''}"></div>
+<div class="fg"><label>備註</label><input id="an" type="text" value="${e?e.note||'':''}"></div>`,
+  async()=>{
+    const d={client:g('ac')||'（未填）',total_amount:parseFloat(g('at'))||0,invoice:g('ai'),note:g('an'),payments:e?e.payments:[]};
+    if(e)await db('receivables','PATCH',d,'?id=eq.'+e.id);
+    else await db('receivables','POST',d);
+    await loadAll();toast(e?'已更新':'已新增');
+  },e?()=>dAR(e.id):null);
+}
+
+// ── OIL MODALS ──
+function oOilUse(cardId){
+  mo('記錄加油',`
+<div class="fg"><label>油卡</label><select id="oc">${OILS.map(c=>'<option value="'+c.id+'"'+(c.id===cardId?' selected':'')+'>'+c.name+'</option>').join('')}</select></div>
+<div class="fg"><label>日期</label><input id="od" type="date" value="${today()}"></div>
+<div class="fg"><label>加油金額 ($)</label><input id="oa" type="number"></div>`,
+  async()=>{
+    const cid=parseInt(g('oc')),amt=parseFloat(g('oa'))||0,dt=g('od');
+    const c=OILS.find(x=>x.id===cid);
+    if(c&&amt>0){const logs=[...(c.logs||[]),{date:dt,amount:amt}];await db('oil_cards','PATCH',{logs},'?id=eq.'+cid);}
+    await loadAll();toast('已記錄加油');
+  });
+}
+
+function oOilTopup(cardId){
+  mo('儲值油卡',`
+<div class="fg"><label>油卡</label><select id="oc">${OILS.map(c=>'<option value="'+c.id+'"'+(c.id===cardId?' selected':'')+'>'+c.name+'</option>').join('')}</select></div>
+<div class="fg"><label>儲值日期</label><input id="od" type="date" value="${today()}"></div>
+<div class="fg"><label>儲值金額 ($)</label><input id="oa" type="number"></div>
+<div class="fg"><label>備註</label><input id="on" type="text" placeholder="例：現金儲值、轉帳"></div>`,
+  async()=>{
+    const cid=parseInt(g('oc')),amt=parseFloat(g('oa'))||0,dt=g('od'),note=g('on');
+    const c=OILS.find(x=>x.id===cid);
+    if(c&&amt>0){const topups=[...(c.topups||[]),{date:dt,amount:amt,note}];await db('oil_cards','PATCH',{topups},'?id=eq.'+cid);}
+    await loadAll();toast('儲值成功');
+  });
+}
+
+// ── AUTO MONTHLY EXPENSES ──
+const MONTHLY_AUTO=[
+  {name:'倉庫租金',amount:30000,freq:'每月'},
+  {name:'公司租金',amount:15000,freq:'每月'},
+  {name:'會計費用',amount:36000,freq:'每月'},
+];
+
+async function checkAutoMonthly(){
+  if(!isAuth) return false;
+  const now=new Date();
+  const ym=now.toISOString().slice(0,7);
+  const firstDay=ym+'-01';
+  let added=false;
+  for(const item of MONTHLY_AUTO){
+    const existing=COS.find(e=>e.name===item.name&&e.period===ym);
+    if(!existing){
+      await db('company_expenses','POST',{name:item.name,amount:item.amount,freq:item.freq,period:ym,date:firstDay,note:'自動新增'});
+      toast('已自動新增 '+now.getFullYear()+'/'+(now.getMonth()+1)+' '+item.name);
+      added=true;
+    }
+  }
+  return added;
+}
+
+// ── CO MODAL ──
+function oCO(e=null){
+  mo(`${e?'編輯':'新增'}公司支出`,`
+<div class="fg"><label>項目名稱</label><input id="cn" type="text" value="${e?e.name:''}" placeholder="例：倉庫租金、保險費用"></div>
+<div class="fr2">
+  <div class="fg"><label>金額 ($)</label><input id="ca" type="number" value="${e?e.amount:''}"></div>
+  <div class="fg"><label>頻率</label><select id="cf">${['單次','每月','每年'].map(f=>'<option '+(e&&e.freq===f?'selected':'')+'>'+f+'</option>').join('')}</select></div>
+</div>
+<div class="fg"><label>日期</label><input id="cdt" type="date" value="${e&&e.date?e.date:today()}"></div>
+<div class="fg"><label>備註</label><input id="cno" type="text" value="${e?e.note||'':''}"></div>`,
+  async()=>{
+    const freq=g('cf'),dt=g('cdt');
+    const period=freq==='每月'&&dt?dt.slice(0,7):'';
+    const d={name:g('cn')||'（未填）',amount:parseFloat(g('ca'))||0,freq,period,date:dt,note:g('cno')};
+    if(e)await db('company_expenses','PATCH',d,'?id=eq.'+e.id);
+    else await db('company_expenses','POST',d);
+    await loadAll();toast(e?'已更新':'已新增');
+  },e?()=>dCO(e.id):null);
+}
+
+// ── ADD PAYMENT ──
+function addPay(arId){
+  mo('新增收款記錄',`
+<div class="fg"><label>收款日期</label><input id="pd" type="date" value="${today()}"></div>
+<div class="fg"><label>收款金額 ($)</label><input id="pa" type="number"></div>
+<div class="fg"><label>備註</label><input id="pn" type="text" placeholder="例：現金、支票、匯款"></div>`,
+  async()=>{
+    const r=ARS.find(x=>x.id===arId);if(!r)return;
+    const payments=[...(r.payments||[]),{date:g('pd'),amount:parseFloat(g('pa'))||0,note:g('pn')}];
+    await db('receivables','PATCH',{payments},'?id=eq.'+arId);
+    await loadAll();toast('已新增收款記錄');
+  });
+}
+
+// ── DELETE OIL ──
+async function delOilLog(cardId,idx){
+  if(!confirm('確定刪除這筆加油記錄？'))return;
+  const c=OILS.find(x=>x.id===cardId);if(!c)return;
+  const logs=(c.logs||[]).filter((_,i)=>i!==idx);
+  await db('oil_cards','PATCH',{logs},'?id=eq.'+cardId);
+  await loadAll();toast('已刪除');
+}
+async function delOilTopup(cardId,idx){
+  if(!confirm('確定刪除這筆儲值記錄？'))return;
+  const c=OILS.find(x=>x.id===cardId);if(!c)return;
+  const topups=(c.topups||[]).filter((_,i)=>i!==idx);
+  await db('oil_cards','PATCH',{topups},'?id=eq.'+cardId);
+  await loadAll();toast('已刪除');
+}
+
+// ── EDIT / DELETE ──
+function eTx(id){oTx(TXS.find(t=>t.id===id));}
+function eAR(id){oAR(ARS.find(r=>r.id===id));}
+function eCO(id){oCO(COS.find(c=>c.id===id));}
+async function dTx(id){if(!confirm('確定刪除？'))return;cmo();await db('transactions','DELETE',null,'?id=eq.'+id);await loadAll();toast('已刪除');}
+async function dAR(id){if(!confirm('確定刪除？'))return;cmo();await db('receivables','DELETE',null,'?id=eq.'+id);await loadAll();toast('已刪除');}
+async function dCO(id){if(!confirm('確定刪除？'))return;cmo();await db('company_expenses','DELETE',null,'?id=eq.'+id);await loadAll();toast('已刪除');}
+
+// ── MODAL ──
+function mo(title,html,onSave,onDel=null){
+  cmo();
+  const d=document.createElement('div');d.className='mo-ov';d.id='mo';
+  d.innerHTML='<div class="mo-box"><div class="mo-handle"></div><div class="mo-title">'+title+'</div>'+html+'<div class="btn-row">'+(onDel?'<button class="btn danger" id="mo-del">刪除</button>':'')+'<button class="btn sec" onclick="cmo()">取消</button><button class="btn pri" id="mo-sv">儲存</button></div></div>';
+  document.body.appendChild(d);
+  document.getElementById('mo-sv').onclick=async()=>{try{await onSave();cmo();}catch(e){toast('錯誤：'+e.message);}};
+  if(onDel)document.getElementById('mo-del').onclick=onDel;
+}
+function cmo(){const m=document.getElementById('mo');if(m)m.remove();}
+function g(id){const el=document.getElementById(id);return el?el.value:'';}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+// ── EXPORT ──
+function exportExcel(){
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['日期','類型','收/支','對象/廠商','金額','匯款狀態','發票號碼','備註'],
+    ...TXS.map(t=>[fd(t.date),t.type,t.direction,t.source,Number(t.amount),t.status,t.invoice||'',t.note||''])
+  ]),'收支明細');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['客戶','發票','合約總額','已收款','未收餘款','備註'],
+    ...ARS.map(r=>[r.client,r.invoice||'',Number(r.total_amount),arG(r),arO(r),r.note||''])
+  ]),'應收款項');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['油卡','日期','類型','金額','備註'],
+    ...OILS.flatMap(c=>[
+      ...(c.topups||[]).map(t=>[c.name,fd(t.date),'儲值',Number(t.amount),t.note||'']),
+      ...(c.logs||[]).map(l=>[c.name,fd(l.date),'加油',Number(l.amount),''])
+    ].sort((a,b)=>a[1].localeCompare(b[1])))
+  ]),'油卡記錄');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['廠商/項目','日期','區間','金額','頻率','備註'],
+    ...COS.map(e=>[e.name,fd(e.date)||'',e.period||'',Number(e.amount),e.freq,e.note||''])
+  ]),'公司支出');
+  XLSX.writeFile(wb,'弘盛財務_'+today()+'.xlsx');
+  toast('Excel 已匯出');
+}
+</script>
+</body>
+</html>
