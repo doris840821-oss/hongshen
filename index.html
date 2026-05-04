@@ -512,27 +512,57 @@ function rAR(){
 }
 
 function rOil(){
-  var html='';
+  var h='';
   OILS.forEach(function(c){
     var rem=oilR(c),totTop=oilTU(c),pct=totTop?Math.round(rem/totTop*100):0;
     var sorted=[];
-    (c.topups||[]).forEach(function(t){sorted.push({date:t.date,amount:t.amount,note:t.note||'',kind:'topup'});});
-    (c.logs||[]).forEach(function(l){sorted.push({date:l.date,amount:l.amount,kind:'use'});});
-    sorted.sort(function(a,b){return a.date.localeCompare(b.date);});
-    var running=0;
-    sorted.forEach(function(e){running+=e.kind==='topup'?Number(e.amount):-Number(e.amount);e.bal=running;});
-    sorted.reverse();
-    html+='<div style="background:#1D9E75;border-radius:12px;padding:16px;color:white;margin-bottom:10px"><div style="font-size:11px;opacity:.75;margin-bottom:4px">'+c.name+'</div><div style="font-size:28px;font-weight:700">'+fmt(rem)+'</div><div style="font-size:11px;opacity:.6;margin-top:2px">總儲值 '+fmt(totTop)+' · 已使用 '+fmt(oilTL(c))+'</div><div class="oil-bg"><div class="oil-fill" style="width:'+Math.min(pct,100)+'%"></div></div><div style="display:flex;justify-content:space-between;margin-top:5px;font-size:10.5px;opacity:.7"><span>剩餘 '+pct+'%</span><span>共 '+(c.topups||[]).length+' 次儲值</span></div>'+(isAuth?'<div class="oil-btn-row"><button class="oil-action-btn" style="background:rgba(255,255,255,.2);color:white" onclick="oOilUse('+c.id+')">記錄加油</button><button class="oil-action-btn" style="background:white;color:#0F6E56" onclick="oOilTopup('+c.id+')">儲值油卡</button></div>':'')+'</div><div class="sec">所有記錄</div><div class="card ci">';
-    if(!sorted.length)html+='<div class="empty">尚無記錄</div>';
-    sorted.forEach(function(entry){
-      var isTopup=entry.kind==='topup';
-      var origArr=isTopup?(c.topups||[]):(c.logs||[]);
-      var origIdx=origArr.findIndex(function(x){return x.date===entry.date&&Number(x.amount)===Number(entry.amount);});
-      html+='<div class="tr" style="align-items:center"><div style="flex:1"><div style="font-size:12px;color:#9B9B97">'+fd(entry.date)+'</div>'+(isTopup?'<span class="bdg topup" style="margin-top:3px">儲值</span>':'')+'</div><div style="font-size:13px;font-weight:700;color:'+(isTopup?'#1D9E75':'#E24B4A')+';margin-right:8px">'+(isTopup?'+':'−')+fmt(entry.amount)+'</div><div style="text-align:right;min-width:72px"><div style="font-size:10px;color:#9B9B97">餘額</div><div style="font-size:13px;font-weight:700">'+fmt(entry.bal)+'</div></div>'+(isAuth?'<button class="eb del" style="margin-left:6px" onclick="'+(isTopup?'delOilTopup':'delOilLog')+'('+c.id+','+origIdx+')">✕</button>':'')+'</div>';
+    (c.topups||[]).forEach(function(t,i){sorted.push({date:t.date,amount:t.amount,note:t.note||'',kind:'topup',idx:i});});
+    (c.logs||[]).forEach(function(l,i){sorted.push({date:l.date,amount:l.amount,kind:'use',idx:i});});
+    sorted.sort(function(a,b){return b.date.localeCompare(a.date);});
+    var running=oilTU(c);
+    var allSorted=[].concat(
+      (c.topups||[]).map(function(t,i){return{date:t.date,amount:t.amount,note:t.note||'',kind:'topup',idx:i};}),
+      (c.logs||[]).map(function(l,i){return{date:l.date,amount:l.amount,kind:'use',idx:i};})
+    ).sort(function(a,b){return a.date.localeCompare(b.date);});
+    var runBal=0;
+    allSorted.forEach(function(e){
+      runBal+=e.kind==='topup'?Number(e.amount):-Number(e.amount);
+      e.bal=runBal;
     });
-    html+='</div>';
+    var sortedDesc=allSorted.slice().reverse();
+
+    h+='<div style="background:#1D9E75;border-radius:12px;padding:16px;color:white;margin-bottom:10px">';
+    h+='<div style="font-size:11px;opacity:.75;margin-bottom:4px">'+c.name+'</div>';
+    h+='<div style="font-size:28px;font-weight:700">'+fmt(rem)+'</div>';
+    h+='<div style="font-size:11px;opacity:.6;margin-top:2px">總儲值 '+fmt(totTop)+' · 已使用 '+fmt(oilTL(c))+'</div>';
+    h+='<div class="oil-bg"><div class="oil-fill" style="width:'+Math.min(pct,100)+'%"></div></div>';
+    h+='<div style="display:flex;justify-content:space-between;margin-top:5px;font-size:10.5px;opacity:.7"><span>剩餘 '+pct+'%</span><span>共 '+(c.topups||[]).length+' 次儲值</span></div>';
+    if(isAuth){
+      h+='<div class="oil-btn-row">';
+      h+='<button class="oil-action-btn" style="background:rgba(255,255,255,.2);color:white" onclick="oOilUse('+c.id+')">記錄加油</button>';
+      h+='<button class="oil-action-btn" style="background:white;color:#0F6E56" onclick="oOilTopup('+c.id+')">儲值油卡</button>';
+      h+='</div>';
+    }
+    h+='</div>';
+    h+='<div class="sec">所有記錄</div><div class="card ci">';
+    if(!sortedDesc.length){h+='<div class="empty">尚無記錄</div>';}
+    sortedDesc.forEach(function(entry){
+      var isTopup=entry.kind==='topup';
+      h+='<div class="tr" style="align-items:center">';
+      h+='<div style="flex:1"><div style="font-size:12px;color:#9B9B97">'+fd(entry.date)+'</div>';
+      if(isTopup)h+='<span class="bdg topup" style="margin-top:3px">儲值</span>';
+      h+='</div>';
+      h+='<div style="font-size:13px;font-weight:700;color:'+(isTopup?'#1D9E75':'#E24B4A')+';margin-right:8px">'+(isTopup?'+':'−')+fmt(entry.amount)+'</div>';
+      h+='<div style="text-align:right;min-width:72px"><div style="font-size:10px;color:#9B9B97">餘額</div><div style="font-size:13px;font-weight:700">'+fmt(entry.bal)+'</div></div>';
+      if(isAuth){
+        h+='<button class="eb" style="margin-left:4px" onclick="'+(isTopup?'editOilTopup':'editOilLog')+'('+c.id+','+entry.idx+')">✏️</button>';
+        h+='<button class="eb del" onclick="'+(isTopup?'delOilTopup':'delOilLog')+'('+c.id+','+entry.idx+')">✕</button>';
+      }
+      h+='</div>';
+    });
+    h+='</div>';
   });
-  return html;
+  return h;
 }
 
 function rCO(){
@@ -656,6 +686,35 @@ async function delPay(arId,idx){
   var payments=(r.payments||[]).filter(function(_,i){return i!==idx;});
   await db('receivables','PATCH',{payments:payments},'?id=eq.'+arId);
   await loadAll();toast('已刪除，收支明細已同步');
+}
+
+function editOilLog(cardId,idx){
+  var c=OILS.find(function(x){return x.id===cardId;});if(!c)return;
+  var log=(c.logs||[])[idx];if(!log)return;
+  mo('編輯加油記錄',
+    '<div class="fg"><label>日期</label><input id="od" type="date" value="'+log.date+'"></div>'+
+    '<div class="fg"><label>加油金額 ($)</label><input id="oa" type="number" value="'+log.amount+'"></div>',
+  async function(){
+    var logs=[...(c.logs||[])];
+    logs[idx]={date:g('od'),amount:parseFloat(g('oa'))||0};
+    await db('oil_cards','PATCH',{logs:logs},'?id=eq.'+cardId);
+    await loadAll();toast('已更新');
+  });
+}
+
+function editOilTopup(cardId,idx){
+  var c=OILS.find(function(x){return x.id===cardId;});if(!c)return;
+  var topup=(c.topups||[])[idx];if(!topup)return;
+  mo('編輯儲值記錄',
+    '<div class="fg"><label>日期</label><input id="od" type="date" value="'+topup.date+'"></div>'+
+    '<div class="fg"><label>儲值金額 ($)</label><input id="oa" type="number" value="'+topup.amount+'"></div>'+
+    '<div class="fg"><label>備註</label><input id="on" type="text" value="'+(topup.note||'')+'" placeholder="例：現金儲值、轉帳"></div>',
+  async function(){
+    var topups=[...(c.topups||[])];
+    topups[idx]={date:g('od'),amount:parseFloat(g('oa'))||0,note:g('on')};
+    await db('oil_cards','PATCH',{topups:topups},'?id=eq.'+cardId);
+    await loadAll();toast('已更新');
+  });
 }
 
 async function delOilLog(cardId,idx){
