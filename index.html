@@ -11,12 +11,12 @@
 <div id="loginWrap" style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:Noto Sans TC,system-ui;background:#F4F3F0">
   <div style="background:white;border-radius:16px;padding:32px 24px;width:100%;max-width:360px;border:0.5px solid rgba(0,0,0,0.08)">
     <div style="font-size:11px;color:#9B9B97;margin-bottom:4px">弘盛工程行</div>
-    <div style="font-size:22px;font-weight:700;margin-bottom:24px">財務管理系統</div>
-    <div id="loginErr" style="background:#FCEBEB;color:#E24B4A;font-size:13px;padding:10px 12px;border-radius:8px;margin-bottom:14px;display:none">Email 或密碼錯誤</div>
-    <div style="margin-bottom:12px"><label style="display:block;font-size:11px;color:#9B9B97;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px">Email</label><input id="lemail" type="email" style="width:100%;padding:10px 12px;border:0.5px solid rgba(0,0,0,0.14);border-radius:8px;font-size:14px;font-family:inherit;outline:none" placeholder="doris840821@gmail.com"></div>
-    <div style="margin-bottom:20px"><label style="display:block;font-size:11px;color:#9B9B97;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px">密碼</label><input id="lpwd" type="password" style="width:100%;padding:10px 12px;border:0.5px solid rgba(0,0,0,0.14);border-radius:8px;font-size:14px;font-family:inherit;outline:none"></div>
+    <div style="font-size:22px;font-weight:700;margin-bottom:8px">財務管理系統</div>
+    <div style="font-size:13px;color:#9B9B97;margin-bottom:24px">輸入密碼進入編輯模式，或直接查閱</div>
+    <div id="loginErr" style="background:#FCEBEB;color:#E24B4A;font-size:13px;padding:10px 12px;border-radius:8px;margin-bottom:14px;display:none">密碼錯誤，請再試一次</div>
+    <div style="margin-bottom:20px"><label style="display:block;font-size:11px;color:#9B9B97;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px">密碼</label><input id="lpwd" type="password" style="width:100%;padding:10px 12px;border:0.5px solid rgba(0,0,0,0.14);border-radius:8px;font-size:14px;font-family:inherit;outline:none" placeholder="輸入密碼"></div>
     <div style="display:flex;gap:8px">
-      <button onclick="doLogin()" style="flex:1;padding:12px;background:#1D9E75;color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">登入</button>
+      <button onclick="doLogin()" style="flex:1;padding:12px;background:#1D9E75;color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">進入編輯</button>
       <button onclick="guestMode()" style="flex:1;padding:12px;background:#F8F7F5;color:#1A1A18;border:0.5px solid rgba(0,0,0,0.14);border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">僅供查閱</button>
     </div>
   </div>
@@ -41,19 +41,14 @@ async function db(tb,mt,bd,qs){
   const t=await r.text();return t?JSON.parse(t):null;
 }
 
-async function doLogin(){
-  const email=document.getElementById('lemail').value.trim();
-  const pwd=document.getElementById('lpwd').value;
+function doLogin(){
+  var pwd=document.getElementById('lpwd').value;
   document.getElementById('loginErr').style.display='none';
-  try{
-    const r=await fetch(SUPA+'/auth/v1/token?grant_type=password',{
-      method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},
-      body:JSON.stringify({email,password:pwd})
-    });
-    const d=await r.json();
-    if(!r.ok||!d.access_token)throw new Error('failed');
-    SESSION=d.access_token;isAuth=true;startApp();
-  }catch(e){document.getElementById('loginErr').style.display='block';}
+  if(pwd==='918070'){
+    isAuth=true;startApp();
+  }else{
+    document.getElementById('loginErr').style.display='block';
+  }
 }
 function guestMode(){SESSION=null;isAuth=false;startApp();}
 function startApp(){
