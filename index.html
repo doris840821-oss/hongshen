@@ -27,7 +27,7 @@
 const SUPA='https://afeyxcvkylznlckoveil.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmZXl4Y3ZreWx6bmxja292ZWlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDc4NDIsImV4cCI6MjA5MzAyMzg0Mn0.HHUNxpu6wwTRTzIxLLCtZDftZwYc3PlCR0tTruFuvUk';
 let SESSION=null,isAuth=false;
-let TXS=[],ARS=[],OILS=[],COS=[],tab='dash',txF='all',arF='all',coF='all',searchQ='';
+let TXS=[],ARS=[],OILS=[],COS=[],tab='dash',txF='all',arF='all',coF='all',searchQ='',dateFrom='',dateTo='';
 
 function ah(){
   return {'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+(SESSION||KEY)};
@@ -200,7 +200,9 @@ body{font-family:'Noto Sans TC',system-ui,sans-serif;background:#F4F3F0;color:#1
 function buildApp(){
   var app=document.getElementById('appWrap');
   var nav='<div class="nav"><button class="nb on" onclick="go(\'dash\')">總覽</button><button class="nb" onclick="go(\'tx\')">收支明細</button><button class="nb" onclick="go(\'ar\')">應收款項</button><button class="nb" onclick="go(\'oil\')">油卡</button><button class="nb" onclick="go(\'co\')">公司支出</button></div>';
-  var topbar='<div class="topbar"><div class="topbar-co">弘盛工程行</div><div class="topbar-row"><div class="topbar-title">財務管理</div><div class="topbar-right"><span id="roBadge" class="ro-badge" style="display:none">僅供查閱</span><button class="export-top" onclick="exportExcel()">匯出 Excel</button><button class="logout-btn" id="logoutBtn" onclick="doLogout()" style="display:none">登出</button></div></div><div class="search-bar"><span style="color:#9B9B97;font-size:14px">🔍</span><input type="text" id="gSearch" placeholder="搜尋收支、廠商、發票號碼..." oninput="onSearch(this.value)"><button id="clearBtn" style="display:none;background:none;border:none;color:#9B9B97;cursor:pointer;font-size:14px;padding:0" onclick="clearSearch()">✕</button></div></div>';
+  var dateFilterRow='<div style="display:flex;align-items:center;gap:6px;margin-top:8px"><span style="font-size:11px;color:#9B9B97;white-space:nowrap">日期篩選</span><input type="date" id="dateFrom" style="flex:1;padding:6px 8px;border:0.5px solid rgba(0,0,0,0.14);border-radius:6px;font-size:12px;background:#F8F7F5;color:#1A1A18;font-family:inherit;outline:none" oninput="dateFrom=this.value;render()"><span style="font-size:11px;color:#9B9B97">至</span><input type="date" id="dateTo" style="flex:1;padding:6px 8px;border:0.5px solid rgba(0,0,0,0.14);border-radius:6px;font-size:12px;background:#F8F7F5;color:#1A1A18;font-family:inherit;outline:none" oninput="dateTo=this.value;render()"><button onclick="clearDate()" style="background:none;border:none;color:#9B9B97;cursor:pointer;font-size:12px;padding:4px 6px;border-radius:6px;white-space:nowrap;font-family:inherit">清除</button></div>';
+  var searchBarHTML='<div class="search-bar"><span style="color:#9B9B97;font-size:14px">🔍</span><input type="text" id="gSearch" placeholder="搜尋收支、廠商、發票號碼..." oninput="onSearch(this.value)"><button id="clearBtn" style="display:none;background:none;border:none;color:#9B9B97;cursor:pointer;font-size:14px;padding:0" onclick="clearSearch()">✕</button></div>';
+  var topbar='<div class="topbar"><div class="topbar-co">弘盛工程行</div><div class="topbar-row"><div class="topbar-title">財務管理</div><div class="topbar-right"><span id="roBadge" class="ro-badge" style="display:none">僅供查閱</span><button class="export-top" onclick="exportExcel()">匯出 Excel</button><button class="logout-btn" id="logoutBtn" onclick="doLogout()" style="display:none">登出</button></div></div>'+searchBarHTML+dateFilterRow+'</div>';
   app.innerHTML='<style>'+CSS+'</style><div class="app">'+topbar+nav+'<div class="content" id="content"><div class="loading"><div class="spin"></div>載入中...</div></div></div><button class="fab" id="fab" onclick="openAdd()" style="display:none">+</button>';
   document.getElementById('roBadge').style.display=isAuth?'none':'inline-block';
   document.getElementById('logoutBtn').style.display=isAuth?'inline-block':'none';
@@ -228,8 +230,23 @@ function hl(text,q){
 }
 function onSearch(v){searchQ=v.trim();document.getElementById('clearBtn').style.display=searchQ?'block':'none';render();}
 function clearSearch(){searchQ='';document.getElementById('gSearch').value='';document.getElementById('clearBtn').style.display='none';render();}
+function clearDate(){
+  dateFrom='';dateTo='';
+  var f=document.getElementById('dateFrom');if(f)f.value='';
+  var t=document.getElementById('dateTo');if(t)t.value='';
+  render();
+}
+function inDateRange(dateStr){
+  if(!dateFrom&&!dateTo)return true;
+  if(dateFrom&&dateStr<dateFrom)return false;
+  if(dateTo&&dateStr>dateTo)return false;
+  return true;
+}
 function go(t){tab=t;document.querySelectorAll('.nb').forEach(function(b,i){b.classList.toggle('on',['dash','tx','ar','oil','co'][i]===t);});render();}
-function render(){if(searchQ){document.getElementById('content').innerHTML=rSearch();return;}document.getElementById('content').innerHTML={dash:rDash,tx:rTx,ar:rAR,oil:rOil,co:rCO}[tab]();}
+function render(){
+  if(searchQ){document.getElementById('content').innerHTML=rSearch();return;}
+  document.getElementById('content').innerHTML={dash:rDash,tx:rTx,ar:rAR,oil:rOil,co:rCO}[tab]();
+}
 
 const SEED_TX=[
   {type:'收到款項',date:'2026-02-09',source:'井源工程行',amount:124950,direction:'收入',status:'待匯款',invoice:'VT32610902',note:''},
@@ -415,6 +432,7 @@ function rTx(){
   if(txF==='收入')L=L.filter(function(t){return t.direction==='收入';});
   else if(txF==='支出')L=L.filter(function(t){return t.direction==='支出';});
   else if(txF==='待匯款')L=L.filter(function(t){return t.status==='待匯款';});
+  if(dateFrom||dateTo)L=L.filter(function(t){return inDateRange(t.date);});
   var totalInc=TXS.filter(function(t){return t.direction==='收入';}).reduce(function(s,t){return s+Number(t.amount);},0);
   var totalExp=TXS.filter(function(t){return t.direction==='支出';}).reduce(function(s,t){return s+Number(t.amount);},0);
   var cats={};
@@ -464,6 +482,7 @@ function rAR(){
   var L=[...ARS];
   if(arF==='未收完')L=L.filter(function(r){return arO(r)>0;});
   else if(arF==='已結清')L=L.filter(function(r){return arO(r)<=0;});
+  if(dateFrom||dateTo)L=L.filter(function(r){return(r.payments||[]).some(function(p){return inDateRange(p.date);})|| inDateRange('');});
   var tot=ARS.reduce(function(s,r){return s+Number(r.total_amount);},0);
   var got=ARS.reduce(function(s,r){return s+arG(r);},0);
   var h='';
@@ -570,6 +589,7 @@ function rCO(){
   if(coF==='每月')L=L.filter(function(e){return e.freq==='每月';});
   else if(coF==='每年')L=L.filter(function(e){return e.freq==='每年';});
   else if(coF==='單次')L=L.filter(function(e){return e.freq==='單次';});
+  if(dateFrom||dateTo)L=L.filter(function(e){return inDateRange(e.date||'');});
   var mo=COS.filter(function(e){return e.freq==='每月';}).reduce(function(s,e){return s+Number(e.amount);},0);
   var yr=COS.filter(function(e){return e.freq==='每年';}).reduce(function(s,e){return s+Number(e.amount);},0);
   var oc=COS.filter(function(e){return e.freq==='單次';}).reduce(function(s,e){return s+Number(e.amount);},0);
